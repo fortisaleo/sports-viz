@@ -1,15 +1,18 @@
 import useSWR, { mutate } from "swr";
-import { Todo } from "./types";
+import { Team, Todo } from "./types";
 
 const todoPath = "/api/todos";
+const teamsPath = "/api/teams";
 
 export const useTodos = () => useSWR<Todo[]>(todoPath);
+
+export const useTeams = () => useSWR<Team[]>(teamsPath);
 
 export const createTodo = async (text: string) => {
   mutate(
     todoPath,
-    todos => [{ text, completed: false, id: "new-todo" }, ...todos],
-    false,
+    (todos) => [{ text, completed: false, id: "new-todo" }, ...todos],
+    false
   );
   await fetch(todoPath, {
     method: "POST",
@@ -22,11 +25,11 @@ export const createTodo = async (text: string) => {
 export const toggleTodo = async (todo: Todo) => {
   mutate(
     todoPath,
-    todos =>
-      todos.map(t =>
-        t.id === todo.id ? { ...todo, completed: !t.completed } : t,
+    (todos) =>
+      todos.map((t) =>
+        t.id === todo.id ? { ...todo, completed: !t.completed } : t
       ),
-    false,
+    false
   );
   await fetch(`${todoPath}?todoId=${todo.id}`, {
     method: "PUT",
@@ -36,7 +39,7 @@ export const toggleTodo = async (todo: Todo) => {
 };
 
 export const deleteTodo = async (id: string) => {
-  mutate(todoPath, todos => todos.filter(t => t.id !== id), false);
+  mutate(todoPath, (todos) => todos.filter((t) => t.id !== id), false);
   await fetch(`${todoPath}?todoId=${id}`, { method: "DELETE" });
   mutate(todoPath);
 };

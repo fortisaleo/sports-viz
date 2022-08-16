@@ -16,3 +16,13 @@ model Todo {
   text      String
   completed Boolean
 }
+
+model Team {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  name         String
+  abbreviation String
+  nickname     String
+  year_founded String
+  city         String
+}

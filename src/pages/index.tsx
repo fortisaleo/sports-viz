@@ -1,7 +1,7 @@
 import { NextPage } from "next";
 import Head from "next/head";
 import { useMemo, useState } from "react";
-import { createTodo, deleteTodo, toggleTodo, useTodos } from "../api";
+import { createTodo, deleteTodo, toggleTodo, useTodos, useTeams } from "../api";
 import styles from "../styles/Home.module.css";
 import { Todo } from "../types";
 
@@ -17,7 +17,7 @@ export const TodoList: React.FC = () => {
 
   return (
     <ul className={styles.todoList}>
-      {todos.map(todo => (
+      {todos.map((todo) => (
         <TodoItem todo={todo} />
       ))}
     </ul>
@@ -49,7 +49,7 @@ const AddTodoInput = () => {
 
   return (
     <form
-      onSubmit={async e => {
+      onSubmit={async (e) => {
         e.preventDefault();
         createTodo(text);
         setText("");
@@ -60,11 +60,24 @@ const AddTodoInput = () => {
         className={styles.input}
         placeholder="Buy some milk"
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={(e) => setText(e.target.value)}
       />
       <button className={styles.addButton}>Add</button>
     </form>
   );
+};
+
+const Teams = () => {
+  const { data: teams, error } = useTeams();
+
+  if (error != null) return <div>Error loading teams...</div>;
+  if (teams == null) return <div>Loading...</div>;
+
+  if (teams.length === 0) {
+    return <div className={styles.emptyState}>Try adding a todo ☝️️</div>;
+  }
+  console.log("The teams", teams);
+  return <>Teams</>;
 };
 
 const Home: NextPage = () => {
@@ -87,6 +100,7 @@ const Home: NextPage = () => {
         <AddTodoInput />
 
         <TodoList />
+        <Teams />
       </main>
     </div>
   );
