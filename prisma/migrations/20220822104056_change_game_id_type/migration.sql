@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "TeamGame" ALTER COLUMN "nbaApiId" SET DATA TYPE TEXT;
