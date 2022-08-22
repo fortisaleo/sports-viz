@@ -53,9 +53,11 @@ model TeamGame {
   TEAM_NAME         String
   TOV               Int
   WL                String
-  id                Int    @id @default(autoincrement())
-  uuId              String @default(uuid())
-  nbaApiId          String
+  id                Int      @id @default(autoincrement())
+  uuId              String   @default(uuid())
+  nbaApiId          String   @unique
   teamId            Int
-  team              Team   @relation(fields: [teamId], references: [id])
+  createdAt         DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
 }
