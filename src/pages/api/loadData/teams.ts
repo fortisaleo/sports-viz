@@ -69,10 +69,10 @@ async function loadTeam(teamData: TeamData) {
         yearFounded: teamData.year_founded,
       },
     });
+    console.log("Created team", finalTeam.fullName);
     finalTeam = team;
   }
 
-  console.log("Created team", finalTeam.fullName);
   return finalTeam;
 }
 
@@ -111,7 +111,7 @@ async function loadGame(gameData: GameData, team: Team) {
   let finalGame = null;
   const previouslyLoadedGame = await prisma.teamGame.findUnique({
     where: {
-      nbaApiId: gameData.GAME_ID,
+      teamId_nbaApiId: { teamId: team.id, nbaApiId: gameData.GAME_ID },
     },
   });
 
@@ -127,11 +127,14 @@ async function loadGame(gameData: GameData, team: Team) {
         },
       });
       finalGame = game;
+      console.log("Created game", finalGame.MATCHUP, finalGame.GAME_DATE);
     } catch (e) {
+      console.log("Error", gameData.MATCHUP, gameData.GAME_DATE);
+      console.log("The error", e);
+      console.log("The game data", gameData);
       return;
     }
   }
-  console.log("Created game", finalGame.MATCHUP, finalGame.GAME_DATE);
   return finalGame;
 }
 
