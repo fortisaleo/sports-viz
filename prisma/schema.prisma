@@ -25,34 +25,34 @@ model Team {
 }
 
 model TeamGame {
-  AST               Int
-  BLK               Int
-  DREB              Int
-  FG3A              Int
-  FG3M              Int
-  FG3_PCT           Float
-  FGA               Int
-  FGM               Int
-  FG_PCT            Float
-  FTA               Int
-  FTM               Int
-  FT_PCT            Float
+  AST               Int?
+  BLK               Int?
+  DREB              Int?
+  FG3A              Int?
+  FG3M              Int?
+  FG3_PCT           Float?
+  FGA               Int?
+  FGM               Int?
+  FG_PCT            Float?
+  FTA               Int?
+  FTM               Int?
+  FT_PCT            Float?
   GAME_DATE         String
   GAME_ID           String
   MATCHUP           String
-  MIN               Int
-  OREB              Int
-  PF                Int
-  PLUS_MINUS        Float
-  PTS               Int
-  REB               Int
+  MIN               Int?
+  OREB              Int?
+  PF                Int?
+  PLUS_MINUS        Float?
+  PTS               Int?
+  REB               Int?
   SEASON_ID         String
-  STL               Int
+  STL               Int?
   TEAM_ABBREVIATION String
   TEAM_ID           Int
   TEAM_NAME         String
-  TOV               Int
-  WL                String
+  TOV               Int?
+  WL                String?
   id                Int      @id @default(autoincrement())
   uuId              String   @default(uuid())
   nbaApiId          String
