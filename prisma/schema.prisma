@@ -21,6 +21,7 @@ model Team {
   addressCity  String
   addressState String
   nickName     String
+  logoUrl      String
   TeamGame     TeamGame[]
 }
 
