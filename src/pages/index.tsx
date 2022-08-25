@@ -138,6 +138,10 @@ const Home: NextPage = () => {
             </Container>
           </Box>
           <Teams />
+
+          <NextLink href={`/barchats`}>
+            <Button size="small">View season</Button>
+          </NextLink>
         </main>
         {/* Footer */}
         <Box sx={{ bgcolor: "background.paper", p: 6 }} component="footer">
