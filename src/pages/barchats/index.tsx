@@ -103,11 +103,14 @@ interface Data {
 
 type Keyframe = [number, Data[]];
 
+function getValidYears(keyFrames: Keyframe[]) {
+  return keyFrames.map((keyFrame) => keyFrame[0]);
+}
+
 function addLastValueToKeyFrames(oldKeyFrames: any): Keyframe[] {
   let keyFrames = _.cloneDeep(oldKeyFrames);
   for (let i = 0; i != keyFrames.length; i++) {
     const lastEntryI = Math.max(0, i - 1);
-    console.log("The lastEntryI", lastEntryI);
     const lastEntry = keyFrames[lastEntryI];
     const currentYearValue = keyFrames[i][1];
     const lastYearValue = keyFrames[lastEntryI][1];
@@ -169,8 +172,6 @@ const BarChartRace = ({
       .style("text-anchor", "end")
       .html("Nba Api");
 
-    let year = 1983;
-
     const names = new Set(data.map((d) => d.name));
     const dateValues = Array.from(
       d3.rollup(
@@ -188,11 +189,13 @@ const BarChartRace = ({
       });
     const keyframes = getKeyFrames(dateValues, names);
     const formattedKeyFrames = addLastValueToKeyFrames(keyframes);
+    const validYears = getValidYears(formattedKeyFrames);
+    const yearTracker = 0;
+    let year = validYears[yearTracker];
+
     let yearSlice = formattedKeyFrames
       .filter((d) => d[0] === year)
       .map((e) => e[1])[0];
-
-    console.log("The year slice", yearSlice);
 
     let x = d3
       .scaleLinear()
@@ -260,133 +263,136 @@ const BarChartRace = ({
       .html(~~year as any)
       .call(halo, 10);
 
-    // let ticker = d3.interval((e) => {
-    //   yearSlice = data
-    //     .filter((d) => (d as any).year == year && !isNaN((d as any).value))
-    //     .sort((a, b) => parseInt(b.value) - parseInt(a.value))
-    //     .slice(0, top_n);
+    let ticker = d3.interval((e) => {
+      yearSlice = formattedKeyFrames
+        .filter(
+          (d) => parseFloat(d[0].toString()) === parseFloat(year.toString())
+        )
+        .map((e) => e[1])[0];
 
-    //   yearSlice.forEach((d, i) => ((d as any).rank = i));
+      x.domain([0, d3.max(yearSlice, (d) => d.value)]);
 
-    //   //console.log('IntervalYear: ', yearSlice);
+      svg
+        .select(".xAxis")
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .call(xAxis as any);
 
-    //   x.domain([0, d3.max(yearSlice, (d) => (d as any).value) as any]);
+      let bars = svg.selectAll(".bar").data(yearSlice, (d) => (d as any).name);
 
-    //   svg
-    //     .select(".xAxis")
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .call(xAxis as any);
+      bars
+        .enter()
+        .append("rect")
+        .attr("class", (d) => `bar ${(d as any).name.replace(/\s/g, "_")}`)
+        .attr("x", x(0) + 1)
+        .attr("width", (d) => x((d as any).value) - x(0) - 1)
+        .attr("y", (d) => y(top_n + 1) + 5)
+        .attr("height", y(1) - y(0) - barPadding)
+        .style("fill", (d) => (d as any).colour)
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("y", (d) => y((d as any).rank) + 5);
 
-    //   let bars = svg.selectAll(".bar").data(yearSlice, (d) => (d as any).name);
+      bars
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("width", (d) => x((d as any).value) - x(0) - 1)
+        .attr("y", (d) => y((d as any).rank) + 5);
 
-    //   bars
-    //     .enter()
-    //     .append("rect")
-    //     .attr("class", (d) => `bar ${(d as any).name.replace(/\s/g, "_")}`)
-    //     .attr("x", x(0) + 1)
-    //     .attr("width", (d) => x((d as any).value) - x(0) - 1)
-    //     .attr("y", (d) => y(top_n + 1) + 5)
-    //     .attr("height", y(1) - y(0) - barPadding)
-    //     .style("fill", (d) => (d as any).colour)
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("y", (d) => y((d as any).rank) + 5);
+      bars
+        .exit()
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("width", (d) => x((d as any).value) - x(0) - 1)
+        .attr("y", (d) => y(top_n + 1) + 5)
+        .remove();
 
-    //   bars
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("width", (d) => x((d as any).value) - x(0) - 1)
-    //     .attr("y", (d) => y((d as any).rank) + 5);
+      let labels = svg
+        .selectAll(".label")
+        .data(yearSlice, (d) => (d as any).name);
 
-    //   bars
-    //     .exit()
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("width", (d) => x((d as any).value) - x(0) - 1)
-    //     .attr("y", (d) => y(top_n + 1) + 5)
-    //     .remove();
+      labels
+        .enter()
+        .append("text")
+        .attr("class", "label")
+        .attr("x", (d) => x((d as any).value) - 8)
+        .attr("y", (d) => y(top_n + 1) + 5 + (y(1) - y(0)) / 2)
+        .style("text-anchor", "end")
+        .html((d) => (d as any).name)
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1);
 
-    //   let labels = svg
-    //     .selectAll(".label")
-    //     .data(yearSlice, (d) => (d as any).name);
+      labels
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("x", (d) => x((d as any).value) - 8)
+        .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1);
 
-    //   labels
-    //     .enter()
-    //     .append("text")
-    //     .attr("class", "label")
-    //     .attr("x", (d) => x((d as any).value) - 8)
-    //     .attr("y", (d) => y(top_n + 1) + 5 + (y(1) - y(0)) / 2)
-    //     .style("text-anchor", "end")
-    //     .html((d) => (d as any).name)
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1);
+      labels
+        .exit()
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("x", (d) => x((d as any).value) - 8)
+        .attr("y", (d) => y(top_n + 1) + 5)
+        .remove();
 
-    //   labels
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("x", (d) => x((d as any).value) - 8)
-    //     .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1);
+      let valueLabels = svg
+        .selectAll(".valueLabel")
+        .data(yearSlice, (d) => (d as any).name);
 
-    //   labels
-    //     .exit()
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("x", (d) => x((d as any).value) - 8)
-    //     .attr("y", (d) => y(top_n + 1) + 5)
-    //     .remove();
+      valueLabels
+        .enter()
+        .append("text")
+        .attr("class", "valueLabel")
+        .attr("x", (d) => x((d as any).value) + 5)
+        .attr("y", (d) => y(top_n + 1) + 5)
+        .text((d) => d3.format(",.0f")((d as any).lastValue))
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1);
 
-    //   let valueLabels = svg
-    //     .selectAll(".valueLabel")
-    //     .data(yearSlice, (d) => (d as any).name);
+      valueLabels
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("x", (d) => x((d as any).value) + 5)
+        .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1)
+        .tween("text", function (d) {
+          let i = d3.interpolateRound((d as any).lastValue, (d as any).value);
+          return function (t) {
+            (this as any).textContent = d3.format(",")(i(t));
+          };
+        });
 
-    //   valueLabels
-    //     .enter()
-    //     .append("text")
-    //     .attr("class", "valueLabel")
-    //     .attr("x", (d) => x((d as any).value) + 5)
-    //     .attr("y", (d) => y(top_n + 1) + 5)
-    //     .text((d) => d3.format(",.0f")((d as any).lastValue))
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1);
+      valueLabels
+        .exit()
+        .transition()
+        .duration(tickDuration)
+        .ease(d3.easeLinear)
+        .attr("x", (d) => x((d as any).value) + 5)
+        .attr("y", (d) => y(top_n + 1) + 5)
+        .remove();
 
-    //   valueLabels
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("x", (d) => x((d as any).value) + 5)
-    //     .attr("y", (d) => y((d as any).rank) + 5 + (y(1) - y(0)) / 2 + 1)
-    //     .tween("text", function (d) {
-    //       let i = d3.interpolateRound((d as any).lastValue, (d as any).value);
-    //       return function (t) {
-    //         (this as any).textContent = d3.format(",")(i(t));
-    //       };
-    //     });
+      yearText.html(~~year as any);
 
-    //   valueLabels
-    //     .exit()
-    //     .transition()
-    //     .duration(tickDuration)
-    //     .ease(d3.easeLinear)
-    //     .attr("x", (d) => x((d as any).value) + 5)
-    //     .attr("y", (d) => y(top_n + 1) + 5)
-    //     .remove();
-
-    //   yearText.html(~~year as any);
-
-    //   if (year == 2018) ticker.stop();
-    //   (year as any) = d3.format(".1f")(+year + 0.1);
-    // }, tickDuration);
+      if (year == 2022) {
+        ticker.stop();
+      }
+      let possibleNextYear = d3.format(".1f")(+year + 0.1);
+      while (!validYears.includes(parseFloat(possibleNextYear))) {
+        possibleNextYear = d3.format(".1f")(+possibleNextYear + 0.1);
+      }
+      (year as any) = possibleNextYear;
+    }, tickDuration);
   }, []);
 
   return null;
