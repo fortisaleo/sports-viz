@@ -223,7 +223,7 @@ const BarChartRace = ({
 
     svg
       .selectAll("rect.bar")
-      .data(yearSlice, (d) => d.name as any)
+      .data(yearSlice, (d) => (d as any).name)
       .enter()
       .append("rect")
       .attr("class", "bar")
