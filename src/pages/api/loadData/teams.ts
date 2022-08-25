@@ -69,7 +69,6 @@ async function loadTeam(teamData: TeamData) {
         yearFounded: teamData.year_founded,
       },
     });
-    console.log("Created team", finalTeam.fullName);
     finalTeam = team;
   }
 
