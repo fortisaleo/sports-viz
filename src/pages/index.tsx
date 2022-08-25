@@ -66,7 +66,7 @@ const Teams = () => {
                   // 16:9
                   pt: "56.25%",
                 }}
-                image="https://source.unsplash.com/random"
+                image={team.logoUrl}
                 alt="random"
               />
               <CardContent sx={{ flexGrow: 1 }}>

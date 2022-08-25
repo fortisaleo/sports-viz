@@ -9,6 +9,7 @@ export interface Team {
   addressCity: string;
   addressState: string;
   nickName: string;
+  logoUrl: string;
 }
 
 export interface TeamGame {
