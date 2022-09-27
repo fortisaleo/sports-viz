@@ -1,166 +1,199 @@
-import * as React from "react";
-import AppBar from "@mui/material/AppBar";
-import Button from "@mui/material/Button";
-import CameraIcon from "@mui/icons-material/PhotoCamera";
-import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
-import CardContent from "@mui/material/CardContent";
-import CardMedia from "@mui/material/CardMedia";
-import CssBaseline from "@mui/material/CssBaseline";
-import Grid from "@mui/material/Grid";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
-import Link from "@mui/material/Link";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { NextPage } from "next";
-import NextLink from "next/link";
-import Head from "next/head";
-import { useMemo, useState } from "react";
-import { useTeams } from "../api";
-import styles from "../styles/Home.module.css";
+import Layout from "../components/Layout";
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Container,
+  Dialog,
+  Grid,
+  TextField,
+} from "@mui/material";
+import { useState } from "react";
+import { isArray } from "util";
+import { useNbaTeams } from "../api";
+import { generateYearsBetween } from "../utils";
+import { renderBarChart } from "../utils/barChartRace";
 
-function Copyright() {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center">
-      {"Copyright © "}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{" "}
-      {new Date().getFullYear()}
-      {"."}
-    </Typography>
-  );
+const yearRange = generateYearsBetween("2000", "2021");
+
+const years = yearRange.map((year) => {
+  return { label: year };
+});
+
+const columns = [
+  "WL",
+  "MIN",
+  "PTS",
+  "FGM",
+  "FGA",
+  "FG_PCT",
+  "FG3M",
+  "FG3A",
+  "FG3_PCT",
+  "FTM",
+  "FTA",
+  "FT_PCT",
+  "OREB",
+  "DREB",
+  "REB",
+  "AST",
+  "STL",
+  "BLK",
+  "TOV",
+  "PF",
+  "PLUS_MINUS",
+];
+const stats = columns.map((column) => {
+  return { label: column };
+});
+
+interface ShowResultsProps {
+  startYear: string;
+  endYear: string;
+  stat: string;
 }
 
-const theme = createTheme();
+const ShowResults: React.FC<ShowResultsProps> = ({
+  startYear,
+  endYear,
+  stat,
+}) => {
+  const { data: barCharts, error: barChartsError } = useNbaTeams({
+    startYear,
+    endYear,
+  });
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [shouldRenderBarChart, setShouldRenderBarChart] =
+    useState<boolean>(false);
 
-const Teams = () => {
-  const { data: teams, error } = useTeams();
+  if (barChartsError != null) return <div>Error loading team games...</div>;
 
-  if (error != null) return <div>Error loading teams...</div>;
-  if (teams == null) return <div>Loading...</div>;
+  if (!barCharts) return <div>Loading...</div>;
 
-  if (teams.length === 0) {
-    return <div className={styles.emptyState}>No teams loaded ☝️️</div>;
+  if (Object.keys(barCharts).length === 0) {
+    return <div>No team games loaded</div>;
+  }
+
+  function handleClickOpen() {
+    setIsDialogOpen(true);
+  }
+
+  let ticker = null;
+
+  function handleRenderBarChart() {
+    const containerDiv = document.getElementById("render-bar-chart");
+    if (!shouldRenderBarChart) {
+      ticker = renderBarChart({ stat, barCharts, containerDiv });
+      setShouldRenderBarChart(true);
+    } else {
+      ticker?.stop();
+      setShouldRenderBarChart(false);
+    }
   }
 
   return (
-    <Container sx={{ py: 8 }} maxWidth="md">
-      {/* End hero unit */}
-      <Grid container spacing={4}>
-        {teams.map((team) => (
-          <Grid item key={team.fullName} xs={12} sm={6} md={4}>
-            <Card
-              sx={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <CardMedia
-                component="img"
-                sx={{
-                  // 16:9
-                  pt: "56.25%",
-                }}
-                image={team.logoUrl}
-                alt="random"
-              />
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Typography gutterBottom variant="h5" component="h2">
-                  {team.fullName}
-                </Typography>
-                <Typography>City: {team.addressCity}</Typography>
-                <Typography>State: {team.addressState}</Typography>
-              </CardContent>
-              <CardActions>
-                <NextLink href={`/teams/${team.id}`}>
-                  <Button size="small">View season</Button>
-                </NextLink>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Container>
+    <>
+      <Button variant="outlined" onClick={handleClickOpen}>
+        Open BarChart Dialog
+      </Button>
+      <Dialog fullScreen={true} open={isDialogOpen}>
+        <Button variant="outlined" onClick={handleRenderBarChart}>
+          {`${
+            shouldRenderBarChart ? "Remove bar chart" : "Render Bar chart"
+          } BarChart`}
+        </Button>
+        <div id="render-bar-chart"></div>
+        <Button variant="outlined" onClick={() => setIsDialogOpen(false)}>
+          Close
+        </Button>
+      </Dialog>
+    </>
   );
 };
 
 const Home: NextPage = () => {
+  const [startYear, setStartYear] = useState<string | null>(null);
+  const [endYear, setEndYear] = useState<string | null>(null);
+  const [stat, setStat] = useState<string | null>(null);
+  const [showResults, setShowResults] = useState<boolean>(false);
+
+  function onChangeStartYear(
+    event: any,
+    value: any,
+    reason: any,
+    details: any
+  ) {
+    setStartYear(value.label as any);
+  }
+
+  function onChangeEndYear(event: any, value: any, reason: any, details: any) {
+    setEndYear(value.label as any);
+  }
+
+  function onChangeStat(event: any, value: any, reason: any, details: any) {
+    setStat(value.label);
+  }
+
+  function getResults() {
+    if (!startYear || !endYear || !stat) {
+      throw new Error("Unable to get results");
+    }
+    setShowResults(true);
+  }
+
   return (
-    <div>
-      <Head>
-        <title>Nba Viz</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <Layout>
+      <Container maxWidth="sm" className="mt-10">
+        <Box mt={8}>
+          <Grid container spacing={2}>
+            <Grid item xs={4}>
+              <Autocomplete
+                disablePortal
+                id="combo-box-demo"
+                options={years}
+                renderInput={(params) => (
+                  <TextField {...params} label="Start Year" />
+                )}
+                onChange={onChangeStartYear}
+              />
+            </Grid>
 
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AppBar position="relative">
-          <Toolbar>
-            <CameraIcon sx={{ mr: 2 }} />
-            <Typography variant="h6" color="inherit" noWrap>
-              Sports Visualizations
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <main>
-          {/* Hero unit */}
-          <Box
-            sx={{
-              bgcolor: "background.paper",
-              pt: 8,
-              pb: 6,
-            }}
-          >
-            <Container maxWidth="sm">
-              <Typography
-                component="h1"
-                variant="h2"
-                align="center"
-                color="text.primary"
-                gutterBottom
-              >
-                Teams
-              </Typography>
-              <Typography
-                variant="h5"
-                align="center"
-                color="text.secondary"
-                paragraph
-              >
-                Click on any team below to get some more information about a
-                particular season
-              </Typography>
-            </Container>
-          </Box>
-          <Teams />
+            <Grid item xs={4}>
+              <Autocomplete
+                disablePortal
+                id="combo-box-demo"
+                options={years}
+                renderInput={(params) => (
+                  <TextField {...params} label="End Year" />
+                )}
+                onChange={onChangeEndYear}
+              />
+            </Grid>
 
-          <NextLink href={`/barchats`}>
-            <Button size="small">View season</Button>
-          </NextLink>
-        </main>
-        {/* Footer */}
-        <Box sx={{ bgcolor: "background.paper", p: 6 }} component="footer">
-          <Typography variant="h6" align="center" gutterBottom>
-            Footer
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            align="center"
-            color="text.secondary"
-            component="p"
-          >
-            Something here to give the footer a purpose!
-          </Typography>
-          <Copyright />
+            <Grid item xs={4}>
+              <Autocomplete
+                disablePortal
+                id="combo-box-demo"
+                options={stats}
+                renderInput={(params) => <TextField {...params} label="Stat" />}
+                onChange={onChangeStat}
+              />
+            </Grid>
+          </Grid>
         </Box>
-        {/* End footer */}
-      </ThemeProvider>
-    </div>
+        <Box mt={8}>
+          <Button variant="contained" onClick={getResults}>
+            Get Results
+          </Button>
+        </Box>
+        {showResults && startYear && endYear && stat && (
+          <Box mt={8}>
+            <ShowResults startYear={startYear} endYear={endYear} stat={stat} />
+          </Box>
+        )}
+      </Container>
+    </Layout>
   );
 };
 

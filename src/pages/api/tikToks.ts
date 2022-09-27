@@ -3,7 +3,7 @@ import { PrismaClient, Team, TeamGame } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-function organizeGamesBySeason(teamGames: TeamGame[]) {
+export function organizeGamesBySeason(teamGames: TeamGame[]) {
   const gamesBySeason = {};
   for (const teamGame of teamGames) {
     const season = teamGame.SEASON_ID.slice(1);
@@ -15,7 +15,7 @@ function organizeGamesBySeason(teamGames: TeamGame[]) {
   return gamesBySeason;
 }
 
-function sumStatsBySeason(gamesOrganizedBySeason: {
+export function sumStatsBySeason(gamesOrganizedBySeason: {
   [key: string]: TeamGame[];
 }) {
   const statsSumedBySeason = {};
